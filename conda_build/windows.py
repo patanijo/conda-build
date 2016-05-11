@@ -50,12 +50,14 @@ def build_vcvarsall_vs_path(version):
 
     Expected versions are of the form {9, 10, 12, 14}
     """
-    program_files_path = os.path.join(PROGRAM_FILES_PATH,
-                                      'Microsoft Visual Studio {}'.format(version), 'VC',
-                                      'vcvarsall.bat')
-    # prefer looking at env var; fall back to program files defaults
-    tool_path = os.environ.get("VS{0}0COMNTOOLS".format(version), program_files_path)
-    return tool_path
+    vstools = "VS{0}0COMNTOOLS".format(version)
+    if vstools in os.environ:
+        return os.path.join(os.environ[vstools], '..\\..\\VC\\vcvarsall.bat')
+    else:
+        # prefer looking at env var; fall back to program files defaults
+        return os.path.join(PROGRAM_FILES_PATH,
+                            'Microsoft Visual Studio {}'.format(version), 'VC',
+                            'vcvarsall.bat')
 
 
 def fix_staged_scripts():
