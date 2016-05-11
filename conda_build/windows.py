@@ -57,6 +57,7 @@ def build_vcvarsall_vs_path(version):
     tool_path = os.environ.get("VS{0}0COMNTOOLS".format(version), program_files_path)
     return tool_path
 
+
 def fix_staged_scripts():
     """
     Fixes scripts which have been installed unix-style to have a .bat
