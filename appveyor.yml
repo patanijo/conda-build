@@ -44,8 +44,8 @@ install:
       Where-Object pullRequestId -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)[0].buildNumber) { `
         throw "There are newer queued builds for this pull request, failing early." }
   # reverse python versions for base, to avoid file permissions errors when base == test version
-  - if "%PYTHON_VERSION" == "3.4" set "BASE_PYTHON_VERSION=3"
-  - if "%PYTHON_VERSION" == "3.5" set "BASE_PYTHON_VERSION=35"
+  - if "%PYTHON_VERSION%" == "3.4" set "BASE_PYTHON_VERSION=3"
+  - if "%PYTHON_VERSION%" == "3.5" set "BASE_PYTHON_VERSION=35"
   - if "%PYTHON_ARCH%" == "64" set "ARCH_LABEL=-x64"
   - set "CONDA_ROOT=C:\Miniconda%BASE_PYTHON_VERSION%%ARCH_LABEL%"
   - for /f "usebackq tokens=2,*" %%A in (`reg query HKCU\Environment /v PATH`) do set "USERPATH=%%A"
