@@ -44,11 +44,9 @@ install:
       Where-Object pullRequestId -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)[0].buildNumber) { `
         throw "There are newer queued builds for this pull request, failing early." }
   # reverse python versions for base, to avoid file permissions errors when base == test version
-  - if "%PYTHON_VERSION:~0,1%" == "2" set "BASE_PYTHON_VERSION=35"
+  - if "%PYTHON_VERSION" == "3.4" set "BASE_PYTHON_VERSION=3"
+  - if "%PYTHON_VERSION" == "3.5" set "BASE_PYTHON_VERSION=35"
   - if "%PYTHON_ARCH%" == "64" set "ARCH_LABEL=-x64"
-  - C:\Miniconda%BASE_PYTHON_VERSION%%ARCH_LABEL%\Scripts\conda create -y -q -n conda_build_test python=%PYTHON_VERSION%
-  - C:\Miniconda%BASE_PYTHON_VERSION%%ARCH_LABEL%\Scripts\activate conda_build_test
-  - set CONDA_DEFAULT_ENV=
   - conda info
   - conda config --set always_yes yes
   - conda update -q --all
@@ -59,8 +57,6 @@ install:
   - pip install auxlib pytest-cov
   - python --version
   - python -c "import struct; print(struct.calcsize('P') * 8)"
-  - set PATH
-  - where conda
   - python setup.py install
 
 
@@ -68,10 +64,8 @@ install:
 build: false
 
 test_script:
-  - C:\Miniconda%BASE_PYTHON_VERSION%%ARCH_LABEL%\Scripts\activate conda_build_test
   - py.test --cov conda_build --cov-report xml tests
 
 on_success:
-  - C:\Miniconda%BASE_PYTHON_VERSION%%ARCH_LABEL%\Scripts\activate conda_build_test
   - pip install codecov
   - codecov --env PYTHON_VERSION
