@@ -48,7 +48,7 @@ install:
   - if "%PYTHON_VERSION" == "3.5" set "BASE_PYTHON_VERSION=35"
   - if "%PYTHON_ARCH%" == "64" set "ARCH_LABEL=-x64"
   - set "CONDA_ROOT=C:\Miniconda%BASE_PYTHON_VERSION%%ARCH_LABEL%"
-  - for /f "usebackq tokens=2,*" %A in (`reg query HKCU\Environment /v PATH`) do set USERPATH=%B
+  - for /f "usebackq tokens=2,*" %%A in (`reg query HKCU\Environment /v PATH`) do set "USERPATH=%%A"
   - set "USERPATH=%CONDA_ROOT%;%CONDA_ROOT%\Scripts;%CONDA_ROOT%\Library\bin;%USERPATH%"
   - set "PATH=%USERPATH%;%PATH%"
   - setx PATH "%USERPATH%"
