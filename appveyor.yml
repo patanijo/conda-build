@@ -75,9 +75,7 @@ build: false
 test_script:
   - set "PATH=%CONDA_ROOT%;%CONDA_ROOT%\Scripts;%CONDA_ROOT%\Library\bin;%PATH%"
   - set PATH
-  - py.test --cov conda_build --cov-report xml tests
-  - appveyor PushArtifact %PYTHON%/conda-bld/work/CMakeFiles/CMakeOutput.log
-  - appveyor PushArtifact %PYTHON%/conda-bld/work/CMakeFiles/CMakeError.log
+  - py.test --cov conda_build --cov-report xml tests || appveyor PushArtifact %PYTHON%/conda-bld/work/CMakeFiles/CMakeOutput.log && appveyor PushArtifact %PYTHON%/conda-bld/work/CMakeFiles/CMakeError.log
 
 on_success:
   - pip install codecov
