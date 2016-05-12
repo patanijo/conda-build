@@ -68,8 +68,10 @@ install:
 build: false
 
 test_script:
+  - C:\Miniconda%BASE_PYTHON_VERSION%%ARCH_LABEL%\Scripts\activate conda_build_test
   - py.test --cov conda_build --cov-report xml tests
 
 on_success:
+  - C:\Miniconda%BASE_PYTHON_VERSION%%ARCH_LABEL%\Scripts\activate conda_build_test
   - pip install codecov
   - codecov --env PYTHON_VERSION
