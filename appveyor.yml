@@ -68,7 +68,7 @@ install:
 build: false
 
 test_script:
-  - py.test --cov conda --cov-report xml tests
+  - py.test --cov conda_build --cov-report xml tests
 
 on_success:
   - pip install codecov
