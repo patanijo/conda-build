@@ -1,60 +1,79 @@
 import unittest
-import tempfile
-import shutil
 import os
+import sys
+
+import pytest
 
 import conda_build.utils as utils
+from .utils import test_config, testing_workdir
 
 
-class TestCopyInto(unittest.TestCase):
+def makefile(name, contents=""):
+    name = os.path.abspath(name)
+    path = os.path.dirname(name)
 
-    def setUp(self):
-        self.src = tempfile.mkdtemp()
-        self.dst = tempfile.mkdtemp()
+    if not os.path.exists(path):
+        os.makedirs(path)
 
-        self.namespace = os.path.join(self.src, 'namespace')
-        self.package = os.path.join(self.namespace, 'package')
-        self.module = os.path.join(self.package, 'module.py')
+    with open(name, 'w') as f:
+        f.write(contents)
 
-        os.makedirs(self.namespace)
-        os.makedirs(self.package)
-        self.makefile(self.module)
 
-    def makefile(self, name, contents=''):
+@pytest.mark.skipif(utils.on_win, reason="only unix has python version in site-packages path")
+def test_get_site_packages(testing_workdir):
+    # https://github.com/conda/conda-build/issues/1055#issuecomment-250961576
 
-        name = os.path.abspath(name)
-        path = os.path.dirname(name)
+    # crazy unreal python version that should show up in a second
+    crazy_path = os.path.join(testing_workdir, 'lib', 'python8.2', 'site-packages')
+    os.makedirs(crazy_path)
+    site_packages = utils.get_site_packages(testing_workdir)
+    assert site_packages == crazy_path
 
-        if not os.path.exists(path):
-            os.makedirs(path)
 
-        with open(name, 'w') as f:
-            f.write(contents)
+@pytest.fixture(scope='function')
+def namespace_setup(testing_workdir, request):
+    namespace = os.path.join(testing_workdir, 'namespace')
+    package = os.path.join(namespace, 'package')
+    makefile(os.path.join(package, "module.py"))
+    return testing_workdir
 
-    def test_copy_source_tree(self):
-        utils.copy_into(self.src, self.dst)
-        self.assertTrue(os.path.isfile(os.path.join(self.dst, 'namespace', 'package',
-                                                    'module.py')))
 
-    def test_merge_namespace_trees(self):
+def test_prepend_sys_path():
+    path = sys.path[:]
+    with utils.sys_path_prepended(sys.prefix):
+        assert sys.path != path
+        assert sys.path[1].startswith(sys.prefix)
 
-        dep = os.path.join(self.dst, 'namespace', 'package', 'dependency.py')
-        self.makefile(dep)
 
-        utils.copy_into(self.src, self.dst)
-        self.assertTrue(os.path.isfile(os.path.join(self.dst, 'namespace', 'package',
-                                                    'module.py')))
-        self.assertTrue(os.path.isfile(dep))
+def test_copy_source_tree(namespace_setup):
+    dst = os.path.join(namespace_setup, 'dest')
+    utils.copy_into(os.path.join(namespace_setup, 'namespace'), dst)
+    assert os.path.isfile(os.path.join(dst, 'package', 'module.py'))
 
-    def test_disallow_merge_conflicts(self):
 
-        duplicate = os.path.join(self.dst, 'namespace', 'package', 'module.py')
-        self.makefile(duplicate)
-        self.assertRaises(IOError, utils.copy_into, self.src, self.dst)
+def test_merge_namespace_trees(namespace_setup):
+    dep = os.path.join(namespace_setup, 'other_tree', 'namespace', 'package', 'dependency.py')
+    makefile(dep)
 
-    def tearDown(self):
-        shutil.rmtree(self.dst)
-        shutil.rmtree(self.src)
+    utils.copy_into(os.path.join(namespace_setup, 'other_tree'), namespace_setup)
+    assert os.path.isfile(os.path.join(namespace_setup, 'namespace', 'package',
+                                                'module.py'))
+    assert os.path.isfile(dep)
+
+
+def test_disallow_merge_conflicts(namespace_setup, test_config):
+    duplicate = os.path.join(namespace_setup, 'dupe', 'namespace', 'package', 'module.py')
+    makefile(duplicate)
+    with pytest.raises(IOError):
+        utils.merge_tree(os.path.dirname(duplicate), os.path.join(namespace_setup, 'namespace',
+                                                 'package'))
+
+
+def test_disallow_in_tree_merge(testing_workdir):
+    with open('testfile', 'w') as f:
+        f.write("test")
+    with pytest.raises(AssertionError):
+        utils.merge_tree(testing_workdir, os.path.join(testing_workdir, 'subdir'))
 
 
 class TestUtils(unittest.TestCase):
